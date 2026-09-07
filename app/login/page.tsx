@@ -41,13 +41,14 @@ export default function LoginPage() {
   }
 
    return (
-    <div className="wrap">
-      <div className="login-header">
+          <div className="login-header">
         <video autoPlay muted loop playsInline className="brand-video login-video">
           <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
         </video>
-        <h1>Peak Line</h1>
-        <p className="tagline">by Peak Platforms</p>
+        <a href="https://www.peak-platforms.com" className="brand-link">
+          <h1>Peak Line</h1>
+          <p className="tagline">by Peak Platforms</p>
+        </a>
       </div>
     <p className="lede">Sign in to create and send secure, encrypted video call links — one link, one person, every time.</p>
 
