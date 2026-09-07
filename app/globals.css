@@ -88,7 +88,12 @@ h1 {
 .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 34px; }
 .brand-row img { height: 30px; width: auto; border-radius: 5px; }
 .brand-video { height: 30px; width: auto; border-radius: 5px; }
-.login-video { height: 90px; margin-bottom: 24px; display: block; }
+.login-video { height: 90px; margin-bottom: 24px; display: inline-block; }
+.login-header { text-align: center; }
+.login-header h1 { margin-bottom: 2px; }
+.brand-link { text-decoration: none; color: inherit; display: block; }
+.brand-link:hover h1 { color: var(--brand-color); }
+.tagline { font-size: 13px; color: var(--text-soft); margin: 0 0 20px; letter-spacing: 0.02em; }
 .brand-row span { font-size: 14px; font-weight: 500; color: var(--text-soft); flex: 1; }
 .signout { width: auto; padding: 6px 12px; font-size: 12px; background: transparent; border: 1px solid var(--paper-line); color: var(--text-soft); margin: 0; }
 .usage { font-size: 13px; color: var(--text-soft); margin: 0 0 22px; }
