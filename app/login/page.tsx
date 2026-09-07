@@ -40,13 +40,16 @@ export default function LoginPage() {
     router.refresh();
   }
 
-  return (
+   return (
     <div className="wrap">
-      <video autoPlay muted loop playsInline className="brand-video login-video">
-        <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
-      </video>
-      <h1>Peak Line</h1>
-      <p className="lede">Sign in to create and send call links to your clients.</p>
+      <div className="login-header">
+        <video autoPlay muted loop playsInline className="brand-video login-video">
+          <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+        </video>
+        <h1>Peak Line</h1>
+        <p className="tagline">by Peak Platforms</p>
+      </div>
+    <p className="lede">Sign in to create and send secure, encrypted video call links — one link, one person, every time.</p>
 
       <form className="note" onSubmit={handleSubmit}>
         <label>Email</label>
