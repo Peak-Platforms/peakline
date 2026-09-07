@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Private Line',
+  title: 'Peak Line',
   description: 'Encrypted 1:1 video calls for professionals'
 };
 
