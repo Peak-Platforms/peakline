@@ -105,9 +105,10 @@ export default function Dashboard() {
   return (
     <div className="wrap">
       <div className="brand-row">
-        {/* BRANDING: replace src below with your logo URL, and the text with your business name */}
-        <img src="https://your-domain.com/logo.png" alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
-        <span>Your Business Name</span>
+        <video autoPlay muted loop playsInline className="brand-video">
+          <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+        </video>
+        <span>Peak Line</span>
         <button className="signout" onClick={signOut}>Sign out</button>
       </div>
 
