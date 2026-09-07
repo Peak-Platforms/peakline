@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   return (
     <div className="wrap">
-      <h1>Private Line</h1>
+      <h1>Peak Line</h1>
       <p className="lede">Sign in to create and send call links to your clients.</p>
 
       <form className="note" onSubmit={handleSubmit}>
