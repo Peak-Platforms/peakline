@@ -2,15 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
 
 type CallRow = { id: string; client_name: string; created_at: string };
+type LinkMode = 'once' | 'reuse';
 
 export default function Dashboard() {
+  const [mode, setMode] = useState<LinkMode>('once');
   const [clientName, setClientName] = useState('');
+  const [calls, setCalls] = useState(10);
+  const [minutes, setMinutes] = useState(300);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastLink, setLastLink] = useState('');
+  const [lastLinkAllotment, setLastLinkAllotment] = useState<{ calls: number; minutes: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<CallRow[]>([]);
   const [userEmail, setUserEmail] = useState('');
@@ -54,36 +60,60 @@ export default function Dashboard() {
     })();
   }, []);
 
-  async function createRoom() {
+  async function createOnceLink() {
+    const res = await fetch('/api/create-room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientName: clientName.trim() })
+    });
+    const data = await res.json();
+
+    if (res.status === 402) {
+      setLimitReached(true);
+      return null;
+    }
+    if (!res.ok) {
+      setStatus(data.error || 'Could not create link.');
+      return null;
+    }
+
+    setUsedThisMonth(usedThisMonth + 1);
+    setHistory([{ id: crypto.randomUUID(), client_name: clientName.trim(), created_at: new Date().toISOString() }, ...history].slice(0, 8));
+    setLastLinkAllotment(null);
+    return data.url as string;
+  }
+
+  async function createReuseLink() {
+    const res = await fetch('/api/create-client-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientName: clientName.trim(), calls, minutes })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatus(data.error || 'Could not create link.');
+      return null;
+    }
+
+    setHistory([{ id: crypto.randomUUID(), client_name: clientName.trim(), created_at: new Date().toISOString() }, ...history].slice(0, 8));
+    setLastLinkAllotment({ calls, minutes });
+    return data.link.room_url as string;
+  }
+
+  async function handleCreate() {
     setStatus('');
     if (!clientName.trim()) { setStatus('Enter a client name first.'); return; }
 
     setLoading(true);
+    setLastLink('');
     try {
-      const res = await fetch('/api/create-room', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientName: clientName.trim() })
-      });
-      const data = await res.json();
-
-      if (res.status === 402) {
-        setLimitReached(true);
-        setLoading(false);
-        return;
+      const url = mode === 'once' ? await createOnceLink() : await createReuseLink();
+      if (url) {
+        setLastLink(url);
+        setCopied(false);
+        setClientName('');
       }
-
-      if (!res.ok) {
-        setStatus(data.error || 'Could not create link.');
-        setLoading(false);
-        return;
-      }
-
-      setLastLink(data.url);
-      setCopied(false);
-      setUsedThisMonth(usedThisMonth + 1);
-      setHistory([{ id: crypto.randomUUID(), client_name: clientName.trim(), created_at: new Date().toISOString() }, ...history].slice(0, 8));
-      setClientName('');
     } catch {
       setStatus('Network error creating link.');
     }
@@ -113,31 +143,67 @@ export default function Dashboard() {
       </div>
 
       <h1>Send a private line</h1>
-      <p className="lede">Signed in as {userEmail}. Each link is fresh, encrypted, and just for one client.</p>
+      <p className="lede">Signed in as {userEmail}. Each link is encrypted and meant for one client.</p>
       {tier === 'basic' && (
-        <p className="usage">{usedThisMonth} of {BASIC_LIMIT} calls used this month</p>
+        <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
       )}
+      <p className="usage"><Link href="/client-links" className="nav-link">View reusable client links →</Link></p>
 
       {limitReached ? (
         <div className="note upgrade">
           <h2 className="upgrade-title">You've used all {BASIC_LIMIT} calls this month</h2>
           <p className="hint">Upgrade to Unlimited to keep sending private lines — $39/mo, no monthly cap.</p>
-          {/* Replace this href with your real Stripe checkout link once billing is wired up */}
           <a href="/upgrade" className="upgrade-btn">Upgrade to Unlimited</a>
         </div>
       ) : (
       <div className="note">
+        <div className="mode-toggle">
+          <button
+            type="button"
+            className={mode === 'once' ? 'mode-btn active' : 'mode-btn'}
+            onClick={() => { setMode('once'); setStatus(''); setLastLink(''); }}
+          >
+            One-time link
+          </button>
+          <button
+            type="button"
+            className={mode === 'reuse' ? 'mode-btn active' : 'mode-btn'}
+            onClick={() => { setMode('reuse'); setStatus(''); setLastLink(''); }}
+          >
+            Reusable link
+          </button>
+        </div>
+        <p className="mode-hint">
+          {mode === 'once'
+            ? "A fresh link, good for one call, then it's done."
+            : 'One link this client can reuse, up to a set number of calls and minutes.'}
+        </p>
+
         <label>Client name</label>
         <input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="For your reference only" />
 
+        {mode === 'reuse' && (
+          <>
+            <label>Calls included</label>
+            <input type="number" min={1} value={calls} onChange={e => setCalls(parseInt(e.target.value) || 10)} />
+
+            <label>Minutes included (total, across all calls)</label>
+            <input type="number" min={1} value={minutes} onChange={e => setMinutes(parseInt(e.target.value) || 300)} />
+          </>
+        )}
+
         <div id="status">{status}</div>
-        <button onClick={createRoom} disabled={loading}>
-          {loading ? 'Creating…' : 'Create call link'}
+        <button onClick={handleCreate} disabled={loading}>
+          {loading ? 'Creating…' : mode === 'once' ? 'Create call link' : 'Create reusable link'}
         </button>
 
         {lastLink && (
           <div className="result">
-            <p className="hint">Send this to your client. It's theirs alone.</p>
+            <p className="hint">
+              {mode === 'once'
+                ? "Send this to your client. It's theirs alone."
+                : `Send this to your client — good for ${lastLinkAllotment?.calls} calls, ${lastLinkAllotment?.minutes} minutes total.`}
+            </p>
             <div className="link">{lastLink}</div>
             {copied && <div className="toast">Copied</div>}
             <button className="secondary" onClick={copyLink}>Copy link</button>
