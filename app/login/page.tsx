@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
@@ -39,6 +40,7 @@ export default function LoginPage() {
     router.push('/dashboard');
     router.refresh();
   }
+
   return (
     <div className="wrap">
       <div className="login-header">
@@ -50,7 +52,7 @@ export default function LoginPage() {
           <p className="tagline">by Peak Platforms</p>
         </a>
       </div>
-     <p className="lede login-page-lede">Sign in to create and send secure, encrypted video call links — one link, one person, every time.</p>
+      <p className="lede">Sign in to create and send secure, encrypted video call links — one link, one person, every time.</p>
 
       <form className="note" onSubmit={handleSubmit}>
         <label>Email</label>
@@ -72,6 +74,12 @@ export default function LoginPage() {
         >
           {mode === 'signin' ? "New here? Create an account" : 'Already have an account? Sign in'}
         </button>
+
+        {mode === 'signin' && (
+          <p className="usage" style={{ textAlign: 'center', marginTop: '14px' }}>
+            <Link href="/forgot-password" className="nav-link">Forgot your password?</Link>
+          </p>
+        )}
       </form>
     </div>
   );
