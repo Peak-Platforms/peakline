@@ -146,3 +146,24 @@ h1 {
 }
 .hist-item .name { color: var(--text); font-weight: 500; }
 .hist-item .time { color: var(--text-soft); }
+.client-link-card { margin-top: 14px; padding: 18px; }
+.client-link-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.client-link-header .name { font-weight: 600; color: var(--ink); }
+.badge-active { font-size: 11px; color: var(--live); border: 1px solid var(--live); border-radius: 12px; padding: 2px 10px; }
+.badge-expired { font-size: 11px; color: var(--danger); border: 1px solid var(--danger); border-radius: 12px; padding: 2px 10px; }
+.allotment { font-size: 13px; color: var(--text-soft); margin: 0 0 12px; }
+.nav-link { color: var(--brand-color); text-decoration: none; font-weight: 500; }
+.nav-link:hover { text-decoration: underline; }
+.mode-toggle { display: flex; gap: 8px; margin-bottom: 10px; }
+.mode-btn {
+  flex: 1;
+  margin-top: 0;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--paper);
+  color: var(--text-soft);
+  border: 1px solid var(--paper-line);
+}
+.mode-btn.active { background: var(--brand-color); color: #fff; border-color: var(--brand-color); }
+.mode-hint { font-size: 12px; color: var(--text-soft); margin: 0 0 16px; }
