@@ -52,7 +52,7 @@ export default function LoginPage() {
           <p className="tagline">by Peak Platforms</p>
         </a>
       </div>
-      <p className="lede">Sign in to create and send secure, encrypted video call links — one link, one person, every time.</p>
+     <p className="lede">Sign in to create secure, encrypted video call links — one-time or reusable, always private.</p>
 
       <form className="note" onSubmit={handleSubmit}>
         <label>Email</label>
