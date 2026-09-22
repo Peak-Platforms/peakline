@@ -48,7 +48,7 @@ export default function LoginPage() {
           <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
         </video>
         <a href="https://www.peak-platforms.com" className="brand-link">
-          <h1>Peak Line</h1>
+          <h1>Peak Link</h1>
           <p className="tagline">by Peak Platforms</p>
         </a>
       </div>
