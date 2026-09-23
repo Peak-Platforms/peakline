@@ -71,11 +71,12 @@ export async function POST(req: Request) {
   const room = await dailyRes.json();
 
   // Log the call under this professional only — RLS ensures they only ever see their own
-  const { error: dbError } = await supabase.from('calls').insert({
-    user_id: user.id,
-    client_name: clientName,
-    room_url: room.url
-  });
+ const { error: dbError } = await supabase.from('calls').insert({
+  user_id: user.id,
+  client_name: clientName,
+  room_url: room.url,
+  daily_room_name: roomName
+});
 
   if (dbError) {
     // Room was created successfully even if logging failed — still return the link
