@@ -23,7 +23,7 @@ export default function LoginPage() {
       ? supabase.auth.signInWithPassword({ email, password })
       : supabase.auth.signUp({ email, password });
 
-    const { error } = await fn;
+    const { data, error } = await fn;
 
     if (error) {
       setStatus(error.message);
@@ -32,7 +32,12 @@ export default function LoginPage() {
     }
 
     if (mode === 'signup') {
-      setStatus('Check your email to confirm your account, then sign in.');
+      const alreadyRegistered = data.user?.identities?.length === 0;
+      setStatus(
+        alreadyRegistered
+          ? 'This email is already registered. Try signing in instead.'
+          : 'Check your email to confirm your account, then sign in.'
+      );
       setLoading(false);
       return;
     }
