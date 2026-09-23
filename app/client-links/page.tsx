@@ -9,6 +9,7 @@ type ClientLink = {
   id: string;
   client_name: string;
   room_url: string;
+  daily_room_name: string;
   calls_remaining: number;
   minutes_remaining: number;
   active: boolean;
@@ -66,9 +67,9 @@ export default function ClientLinksPage() {
               </p>
               {link.active && (
                 <>
-                  <div className="link">{link.room_url}</div>
+             <div className="link">{`https://app.getpeaklink.com/call/${link.daily_room_name}`}</div>
                   {copiedId === link.id && <div className="toast">Copied</div>}
-                  <button className="secondary" onClick={() => copyLink(link.room_url, link.id)}>
+                  <button className="secondary" onClick={() => copyLink(`https://app.getpeaklink.com/call/${link.daily_room_name}`, link.id)}>
                     Copy link
                   </button>
                 </>
