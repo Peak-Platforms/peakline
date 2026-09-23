@@ -83,5 +83,5 @@ export async function POST(req: Request) {
     console.error('Failed to log call:', dbError.message);
   }
 
-  return NextResponse.json({ url: room.url });
+ return NextResponse.json({ url: `https://app.getpeaklink.com/call/${roomName}` });
 }
