@@ -63,5 +63,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Room created but could not be saved' }, { status: 500 });
   }
 
-  return NextResponse.json({ link });
+ return NextResponse.json({
+  link: {
+    ...link,
+    publicUrl: `https://app.getpeaklink.com/call/${roomName}`
+  }
+});
 }
