@@ -5,16 +5,43 @@ import { useParams } from 'next/navigation';
 
 type Status = 'loading' | 'error' | 'ready' | 'joining' | 'in-call';
 
+function detectInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+
+  const signatures = [
+    'FBAN', 'FBAV',
+    'Instagram',
+    'Line/',
+    'MicroMessenger',
+    'Twitter',
+    'GmailApp',
+    '; wv',
+  ];
+
+  if (signatures.some((sig) => ua.includes(sig))) return true;
+
+  const isIOS = /iPhone|iPad|iPod/.test(ua);
+  if (isIOS && ua.includes('AppleWebKit') && !ua.includes('Safari')) return true;
+
+  return false;
+}
+
 export default function CallPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [clientName, setClientName] = useState<string | undefined>();
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const [showInAppWarning, setShowInAppWarning] = useState(false);
+  const [copied, setCopied] = useState(false);
   const callFrameRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Step 0: check the link is valid
+  useEffect(() => {
+    setShowInAppWarning(detectInAppBrowser());
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -42,8 +69,6 @@ export default function CallPage() {
     };
   }, [roomId]);
 
-  // Step 1: user clicks "Join call" — check eligibility, get the room URL,
-  // then switch to 'joining' so the (now-visible) container mounts.
   async function handleJoin() {
     const res = await fetch(`/api/call-info/${roomId}/join`, { method: 'POST' });
     const body = await res.json();
@@ -61,12 +86,9 @@ export default function CallPage() {
     }
 
     setRoomUrl(body.roomUrl);
-    setStatus('joining'); // container becomes visible now, before we connect
+    setStatus('joining');
   }
 
-  // Step 2: once 'joining' and the container is actually in the DOM and
-  // visible, create the Daily frame and connect. Any Daily-side prompt or
-  // spinner is now visible to the user, not hidden.
   useEffect(() => {
     if (status !== 'joining' || !roomUrl || !containerRef.current) return;
 
@@ -87,7 +109,6 @@ export default function CallPage() {
         await frame.join();
         if (cancelled) return;
 
-        // Real connection succeeded — now consume the link's quota.
         fetch(`/api/call-info/${roomId}/confirm`, { method: 'POST' }).catch(() => {});
 
         setStatus('in-call');
@@ -115,6 +136,12 @@ export default function CallPage() {
     setStatus('ready');
   }
 
+  function copyPageLink() {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
   if (status === 'loading') {
     return <CenteredMessage>Loading…</CenteredMessage>;
   }
@@ -133,7 +160,32 @@ export default function CallPage() {
   if (status === 'ready') {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', maxWidth: 320 }}>
+        <div style={{ textAlign: 'center', maxWidth: 340 }}>
+          {showInAppWarning && (
+            <div
+              style={{
+                background: '#FFF4E5',
+                border: '1px solid #F2A93B',
+                borderRadius: 8,
+                padding: '14px 16px',
+                marginBottom: 20,
+                fontSize: 14,
+                textAlign: 'left',
+              }}
+            >
+              <strong>For the best experience, open this in your browser.</strong>
+              <p style={{ marginTop: 6, marginBottom: 10 }}>
+                Camera and microphone access can be blocked inside this app's built-in browser.
+              </p>
+              <button onClick={copyPageLink}>
+                {copied ? 'Link copied' : 'Copy link'}
+              </button>
+              <p style={{ marginTop: 8, fontSize: 12.5, color: '#5B6472' }}>
+                Then paste it into Chrome or Safari.
+              </p>
+            </div>
+          )}
+
           <p style={{ marginBottom: 20 }}>
             {clientName ? `You're about to join your call.` : 'Ready to join your call.'}
           </p>
@@ -143,8 +195,6 @@ export default function CallPage() {
     );
   }
 
-  // 'joining' or 'in-call' — the container is visible in both, so whatever
-  // Daily needs to show (device check, spinner, the call itself) is visible.
   return <div ref={containerRef} style={{ width: '100vw', height: '100vh' }} />;
 }
 
