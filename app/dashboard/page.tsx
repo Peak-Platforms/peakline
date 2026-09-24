@@ -207,7 +207,7 @@ export default function Dashboard() {
             <div className="link">{lastLink}</div>
             {copied && <div className="toast">Copied</div>}
             <button className="secondary" onClick={copyLink}>Copy link</button>
-            <button onClick={() => window.open(lastLink, '_blank')}>Join call now</button>
+            <button onClick={() => router.push(lastLink.replace('/call/', '/host/'))}>Join call now</button>
           </div>
         )}
       </div>
