@@ -72,6 +72,9 @@ export default function ClientLinksPage() {
                   <button className="secondary" onClick={() => copyLink(`https://app.getpeaklink.com/call/${link.daily_room_name}`, link.id)}>
                     Copy link
                   </button>
+                  <button className="secondary" onClick={() => router.push(`/host/${link.daily_room_name}`)}>
+                    Join call
+                  </button>
                 </>
               )}
             </div>
