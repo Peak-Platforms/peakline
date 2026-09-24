@@ -10,7 +10,6 @@ function detectInAppBrowser(): boolean {
   const ua = navigator.userAgent || '';
 
   const signatures = [
-    'FBAN', 'FBAV',
     'Instagram',
     'Line/',
     'MicroMessenger',
