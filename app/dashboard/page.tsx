@@ -98,7 +98,7 @@ export default function Dashboard() {
 
     setHistory([{ id: crypto.randomUUID(), client_name: clientName.trim(), created_at: new Date().toISOString() }, ...history].slice(0, 8));
     setLastLinkAllotment({ calls, minutes });
-    return data.link.room_url as string;
+    return data.link.publicUrl as string;
   }
 
   async function handleCreate() {
