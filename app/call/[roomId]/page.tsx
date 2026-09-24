@@ -41,6 +41,7 @@ export default function CallPage() {
   async function handleJoin() {
     setInfo({ status: 'joining' });
 
+    // Step 1: check eligibility and get the room URL — does NOT consume quota yet
     const res = await fetch(`/api/call-info/${roomId}/join`, { method: 'POST' });
     const body = await res.json();
 
@@ -53,22 +54,34 @@ export default function CallPage() {
       return;
     }
 
-    // Load daily-js only when needed (keeps initial page light)
-    const DailyIframe = (await import('@daily-co/daily-js')).default;
+    try {
+      const DailyIframe = (await import('@daily-co/daily-js')).default;
 
-    if (containerRef.current) {
+      if (!containerRef.current) return;
+
       const frame = DailyIframe.createFrame(containerRef.current, {
         url: body.roomUrl,
         showLeaveButton: true,
-        iframeStyle: {
-          width: '100%',
-          height: '100%',
-          border: '0',
-        },
+        iframeStyle: { width: '100%', height: '100%', border: '0' },
       });
       callFrameRef.current = frame;
+
+      // This is the actual connection point — camera/mic permission happens here.
+      // If the user denies permission or backs out, this throws/rejects and we
+      // never reach the confirm step below, so the link stays unconsumed.
       await frame.join();
+
+      // Step 2: only now, after a real connection, consume the quota.
+      fetch(`/api/call-info/${roomId}/confirm`, { method: 'POST' }).catch(() => {
+        // Non-fatal if this fails — worst case a link doesn't get marked used.
+        // Better than blocking a real user who already connected.
+      });
+
       setInfo({ status: 'in-call' });
+    } catch {
+      // Join failed or was cancelled (e.g. permission denied) — nothing was
+      // consumed, so let them try again.
+      setInfo({ status: 'error', message: "Couldn't connect. You can try again with the same link." });
     }
   }
 
@@ -83,15 +96,20 @@ export default function CallPage() {
   }
 
   if (info.status === 'error') {
-    return <CenteredMessage>{info.message}</CenteredMessage>;
+    return (
+      <CenteredMessage>
+        {info.message}
+        <div style={{ marginTop: 16 }}>
+          <button onClick={() => setInfo({ status: 'ready' })}>Try again</button>
+        </div>
+      </CenteredMessage>
+    );
   }
 
   if (info.status === 'in-call') {
     return <div ref={containerRef} style={{ width: '100vw', height: '100vh' }} />;
   }
 
-  // 'ready' or 'joining' — show the landing screen, container stays mounted
-  // underneath so the iframe can attach into it once joined.
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', maxWidth: 320 }}>
