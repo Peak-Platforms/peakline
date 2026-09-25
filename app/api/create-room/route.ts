@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 
 const BASIC_MONTHLY_LIMIT = 10;
+const BASIC_ROOM_MINUTES = 60;
+const UNLIMITED_ROOM_HOURS = 6;
 
 export async function POST(req: Request) {
   const supabase = createClient();
@@ -46,6 +48,12 @@ export async function POST(req: Request) {
 
   const roomName = 'call-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 
+  // Basic tier gets a 60-minute room window (link + call must complete within
+  // that hour). Unlimited gets the generous 6-hour window as before.
+  const roomLifetimeSeconds = tier === 'basic'
+    ? BASIC_ROOM_MINUTES * 60
+    : UNLIMITED_ROOM_HOURS * 60 * 60;
+
   const dailyRes = await fetch('https://api.daily.co/v1/rooms', {
     method: 'POST',
     headers: {
@@ -55,7 +63,7 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       name: roomName,
       properties: {
-        exp: Math.round(Date.now() / 1000) + 60 * 60 * 6,
+        exp: Math.round(Date.now() / 1000) + roomLifetimeSeconds,
         max_participants: 2,
         enable_recording: false
       }
@@ -71,17 +79,17 @@ export async function POST(req: Request) {
   const room = await dailyRes.json();
 
   // Log the call under this professional only — RLS ensures they only ever see their own
- const { error: dbError } = await supabase.from('calls').insert({
-  user_id: user.id,
-  client_name: clientName,
-  room_url: room.url,
-  daily_room_name: roomName
-});
+  const { error: dbError } = await supabase.from('calls').insert({
+    user_id: user.id,
+    client_name: clientName,
+    room_url: room.url,
+    daily_room_name: roomName
+  });
 
   if (dbError) {
     // Room was created successfully even if logging failed — still return the link
     console.error('Failed to log call:', dbError.message);
   }
 
- return NextResponse.json({ url: `https://app.getpeaklink.com/call/${roomName}` });
+  return NextResponse.json({ url: `https://app.getpeaklink.com/call/${roomName}` });
 }
