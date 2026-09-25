@@ -158,7 +158,10 @@ export default function Dashboard() {
       )}
       <p className="usage"><Link href="/client-links" className="nav-link">View reusable client links →</Link></p>
       <p className="usage"><Link href="/dashboard/branding" className="nav-link">Edit client-facing branding →</Link></p>
-
+      <p className="usage"><Link href="/dashboard/branding" className="nav-link">Edit client-facing branding →</Link></p>
+      {tier === 'basic' && (
+      <p className="usage"><Link href="/upgrade" className="nav-link">Upgrade to Unlimited →</Link></p>
+      )}
       {limitReached ? (
         <div className="note upgrade">
           <h2 className="upgrade-title">You've used all {BASIC_LIMIT} calls this month</h2>
