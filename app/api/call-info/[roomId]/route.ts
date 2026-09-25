@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
 
+async function getBranding(supabase: any, userId: string) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name, business_name, accent_color, photo_url, show_branding')
+    .eq('id', userId)
+    .maybeSingle();
+
+  return {
+    displayName: profile?.display_name || null,
+    businessName: profile?.business_name || null,
+    accentColor: profile?.accent_color || '#F2A93B',
+    photoUrl: profile?.photo_url || null,
+    showBranding: profile?.show_branding ?? true,
+  };
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { roomId: string } }
@@ -11,7 +27,7 @@ export async function GET(
   // Reusable link?
   const { data: link } = await supabase
     .from('client_links')
-    .select('client_name, calls_remaining, minutes_remaining')
+    .select('client_name, calls_remaining, minutes_remaining, user_id')
     .eq('daily_room_name', roomId)
     .maybeSingle();
 
@@ -22,13 +38,14 @@ export async function GET(
         { status: 410 }
       );
     }
-    return NextResponse.json({ type: 'reusable', clientName: link.client_name });
+    const branding = await getBranding(supabase, link.user_id);
+    return NextResponse.json({ type: 'reusable', clientName: link.client_name, branding });
   }
 
   // One-time link?
   const { data: call } = await supabase
     .from('calls')
-    .select('client_name, used')
+    .select('client_name, used, user_id')
     .eq('daily_room_name', roomId)
     .maybeSingle();
 
@@ -46,5 +63,6 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ type: 'onetime', clientName: call.client_name });
+  const branding = await getBranding(supabase, call.user_id);
+  return NextResponse.json({ type: 'onetime', clientName: call.client_name, branding });
 }
