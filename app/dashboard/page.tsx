@@ -154,9 +154,10 @@ export default function Dashboard() {
           : 'Each link is encrypted and tied to one client, reusable for the calls and minutes you set.'}
       </p>
       {tier === 'basic' && (
-        <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
+      <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
       )}
       <p className="usage"><Link href="/client-links" className="nav-link">View reusable client links →</Link></p>
+      <p className="usage"><Link href="/dashboard/branding" className="nav-link">Edit client-facing branding →</Link></p>
 
       {limitReached ? (
         <div className="note upgrade">
