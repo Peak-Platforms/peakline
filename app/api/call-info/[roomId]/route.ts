@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
 
 async function getBranding(supabase: any, userId: string) {
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('display_name, business_name, accent_color, photo_url, show_branding')
     .eq('id', userId)
@@ -14,6 +14,7 @@ async function getBranding(supabase: any, userId: string) {
     accentColor: profile?.accent_color || '#F2A93B',
     photoUrl: profile?.photo_url || null,
     showBranding: profile?.show_branding ?? true,
+    _debug: { userId, profile, error: error?.message || null },
   };
 }
 
@@ -24,7 +25,6 @@ export async function GET(
   const roomId = params.roomId;
   const supabase = createAdminClient();
 
-  // Reusable link?
   const { data: link } = await supabase
     .from('client_links')
     .select('client_name, calls_remaining, minutes_remaining, user_id')
@@ -42,7 +42,6 @@ export async function GET(
     return NextResponse.json({ type: 'reusable', clientName: link.client_name, branding });
   }
 
-  // One-time link?
   const { data: call } = await supabase
     .from('calls')
     .select('client_name, used, user_id')
