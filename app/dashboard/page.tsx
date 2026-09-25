@@ -154,7 +154,7 @@ export default function Dashboard() {
           : 'Each link is encrypted and tied to one client, reusable for the calls and minutes you set.'}
       </p>
       {tier === 'basic' && (
-      <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
+        <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
       )}
       <p className="usage"><Link href="/client-links" className="nav-link">View reusable client links →</Link></p>
       <p className="usage"><Link href="/dashboard/branding" className="nav-link">Edit client-facing branding →</Link></p>
@@ -175,19 +175,31 @@ export default function Dashboard() {
           >
             One-time link
           </button>
-          <button
-            type="button"
-            className={mode === 'reuse' ? 'mode-btn active' : 'mode-btn'}
-            onClick={() => { setMode('reuse'); setStatus(''); setLastLink(''); }}
-          >
-            Reusable link
-          </button>
+          {tier === 'unlimited' ? (
+            <button
+              type="button"
+              className={mode === 'reuse' ? 'mode-btn active' : 'mode-btn'}
+              onClick={() => { setMode('reuse'); setStatus(''); setLastLink(''); }}
+            >
+              Reusable link
+            </button>
+          ) : (
+            <a href="/upgrade" className="mode-btn locked">
+              Reusable link 🔒
+            </a>
+          )}
         </div>
         <p className="mode-hint">
           {mode === 'once'
             ? "A fresh link, good for one call, then it's done."
             : 'One link this client can reuse, up to a set number of calls and minutes.'}
         </p>
+        {tier === 'basic' && (
+          <p className="hint" style={{ marginBottom: 16 }}>
+            Reusable client links are available on Unlimited.{' '}
+            <a href="/upgrade" className="nav-link">Upgrade →</a>
+          </p>
+        )}
 
         <label>Client name</label>
         <input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="For your reference only" />
