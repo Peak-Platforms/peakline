@@ -127,6 +127,11 @@ export default function Dashboard() {
     setTimeout(() => setCopied(false), 1800);
   }
 
+  function joinAsHost() {
+    if (!lastLink) return;
+    router.push(lastLink.replace('/call/', '/host/'));
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     router.push('/login');
@@ -143,7 +148,11 @@ export default function Dashboard() {
       </div>
 
       <h1>Send a private line</h1>
-      <p className="lede">Signed in as {userEmail}. Each link is encrypted and meant for one client.</p>
+      <p className="lede">
+        Signed in as {userEmail}. {mode === 'once'
+          ? 'Each link is encrypted and meant for one client, one call.'
+          : 'Each link is encrypted and tied to one client, reusable for the calls and minutes you set.'}
+      </p>
       {tier === 'basic' && (
         <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
       )}
@@ -207,7 +216,7 @@ export default function Dashboard() {
             <div className="link">{lastLink}</div>
             {copied && <div className="toast">Copied</div>}
             <button className="secondary" onClick={copyLink}>Copy link</button>
-            <button onClick={() => router.push(lastLink.replace('/call/', '/host/'))}>Join call now</button>
+            <button onClick={joinAsHost}>Join call now</button>
           </div>
         )}
       </div>
