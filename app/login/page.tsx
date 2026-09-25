@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
@@ -11,8 +11,26 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const search = window.location.search;
+    const hash = window.location.hash;
+    const confirmed =
+      search.includes('code=') ||
+      hash.includes('type=signup') ||
+      hash.includes('access_token');
+
+    if (confirmed) {
+      setJustConfirmed(true);
+      // Clean the URL so a refresh doesn't keep showing the banner or the token in the address bar
+      window.history.replaceState({}, '', '/login');
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,7 +75,15 @@ export default function LoginPage() {
           <p className="tagline">by Peak Platforms</p>
         </a>
       </div>
-    <p className="lede login-page-lede">Sign in to create secure, encrypted video call links — one-time or reusable, always private.</p>
+      <p className="lede login-page-lede">Sign in to create secure, encrypted video call links — one-time or reusable, always private.</p>
+
+      {justConfirmed && (
+        <div className="note" style={{ background: '#eefbf2', border: '1px solid #a6e3b8', marginBottom: 16 }}>
+          <p style={{ margin: 0, color: '#1a7a3d', fontWeight: 600 }}>
+            Your account is confirmed — sign in below to get started.
+          </p>
+        </div>
+      )}
 
       <form className="note" onSubmit={handleSubmit}>
         <label>Email</label>
