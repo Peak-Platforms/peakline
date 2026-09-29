@@ -111,6 +111,9 @@ export default function HostCallPage() {
         <div style={{ textAlign: 'center', maxWidth: 320 }}>
           <p style={{ marginBottom: 20 }}>Ready to start this call.</p>
           <button onClick={handleJoin}>Join call</button>
+          <p style={{ marginTop: 16, fontSize: 12, color: '#8a94a3' }}>
+            Please allow camera and microphone access when prompted.
+          </p>
         </div>
       </div>
     );
