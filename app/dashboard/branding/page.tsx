@@ -99,8 +99,15 @@ export default function BrandingPage() {
 
   return (
     <div className="wrap">
+      <div className="brand-row">
+        <video autoPlay muted loop playsInline className="brand-video">
+          <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+        </video>
+        <h1 className="brand-title">Peak Link</h1>
+      </div>
+
       <p><Link href="/dashboard" className="nav-link">← Back to dashboard</Link></p>
-      <h1>Client-facing branding</h1>
+      <h2 className="page-title">Client-facing branding</h2>
       <p className="lede">
         This is what your clients see on the call landing screen before they join.
       </p>
