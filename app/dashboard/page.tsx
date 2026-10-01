@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [limitReached, setLimitReached] = useState(false);
   const router = useRouter();
   const supabase = createClient();
-  const BASIC_LIMIT = 10;
+  const BASIC_LIMIT = 3;
 
   useEffect(() => {
     (async () => {
