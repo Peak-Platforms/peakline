@@ -43,7 +43,14 @@ export default function ClientLinksPage() {
 
   return (
     <div className="wrap">
-      <h1>Client links</h1>
+      <div className="brand-row">
+        <video autoPlay muted loop playsInline className="brand-video">
+          <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+        </video>
+        <h1 className="brand-title">Peak Link</h1>
+      </div>
+
+      <h2 className="page-title">Client links</h2>
       <p className="lede">
         Every reusable link you've created, and how much of its allotment is left.
       </p>
