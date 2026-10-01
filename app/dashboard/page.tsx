@@ -147,7 +147,7 @@ export default function Dashboard() {
   <button className="signout" onClick={signOut}>Sign out</button>
    </div>
 
-      <h1>Send a private line</h1>
+      <h1>Send a private link</h1>
       <p className="lede">
         Signed in as {userEmail}. {mode === 'once'
           ? 'Each link is encrypted and meant for one client, one call.'
@@ -164,7 +164,7 @@ export default function Dashboard() {
       {limitReached ? (
         <div className="note upgrade">
           <h2 className="upgrade-title">You've used all {BASIC_LIMIT} calls this month</h2>
-          <p className="hint">Upgrade to Unlimited to keep sending private lines — $39/mo, no monthly cap.</p>
+          <p className="hint">Upgrade to Unlimited to keep sending private video links — $39/mo, no monthly cap.</p>
           <a href="/upgrade" className="upgrade-btn">Upgrade to Unlimited</a>
         </div>
       ) : (
