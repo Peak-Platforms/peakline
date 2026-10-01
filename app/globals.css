@@ -85,9 +85,10 @@ h1 {
 .lede { font-size: 15px; line-height: 1.55; color: var(--text-soft); margin: 0 0 8px; max-width: 36ch; }
 
 /* Dashboard */
-.brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 34px; }
-.brand-row img { height: 30px; width: auto; border-radius: 5px; }
-.brand-video { height: 90px; width: auto; border-radius: 5px; }
+.brand-row { text-align: center; margin-bottom: 34px; position: relative; }
+.brand-row img { height: 90px; width: auto; border-radius: 5px; }
+.brand-video { height: 90px; width: auto; border-radius: 5px; display: block; margin: 0 auto 10px; }
+.brand-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 24px; color: var(--ink); margin: 0 0 20px; }
 .login-video { height: 90px; margin-bottom: 24px; display: inline-block; }
 .login-header { text-align: center; }
 .login-header h1 { margin-bottom: 2px; }
@@ -95,8 +96,7 @@ h1 {
 .brand-link { text-decoration: none; color: inherit; display: block; }
 .brand-link:hover h1 { color: var(--brand-color); }
 .tagline { font-size: 13px; color: var(--text-soft); margin: 0 0 20px; letter-spacing: 0.02em; }
-.brand-row span { font-size: 14px; font-weight: 500; color: var(--text-soft); flex: 1; }
-.signout { width: auto; padding: 6px 12px; font-size: 12px; background: transparent; border: 1px solid var(--paper-line); color: var(--text-soft); margin: 0; }
+.signout { position: absolute; top: 0; right: 0; width: auto; padding: 6px 12px; font-size: 12px; background: transparent; border: 1px solid var(--paper-line); color: var(--text-soft); margin: 0; }
 .usage { font-size: 13px; color: var(--text-soft); margin: 0 0 22px; }
 .upgrade { text-align: left; }
 .upgrade-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
