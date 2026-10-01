@@ -27,8 +27,15 @@ export default function UpgradePage() {
 
   return (
     <div className="wrap">
+      <div className="brand-row">
+        <video autoPlay muted loop playsInline className="brand-video">
+          <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+        </video>
+        <h1 className="brand-title">Peak Link</h1>
+      </div>
+
       <p><Link href="/dashboard" className="nav-link">← Back to dashboard</Link></p>
-      <h1>Upgrade to Unlimited</h1>
+      <h2 className="page-title">Upgrade to Unlimited</h2>
       <p className="lede">$39/mo — no monthly call cap, reusable client links, and white-label branding.</p>
 
       <div className="note">
