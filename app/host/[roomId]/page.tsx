@@ -107,7 +107,13 @@ export default function HostCallPage() {
 
   if (status === 'ready') {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="brand-row" style={{ marginBottom: 20 }}>
+          <video autoPlay muted loop playsInline className="brand-video">
+            <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+          </video>
+          <h1 className="brand-title">Peak Link</h1>
+        </div>
         <div style={{ textAlign: 'center', maxWidth: 320 }}>
           <p style={{ marginBottom: 20 }}>Ready to start this call.</p>
           <button onClick={handleJoin}>Join call</button>
