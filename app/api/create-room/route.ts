@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 
-const BASIC_MONTHLY_LIMIT = 10;
+const BASIC_MONTHLY_LIMIT = 3;
 const BASIC_ROOM_MINUTES = 60;
 const UNLIMITED_ROOM_HOURS = 6;
 
