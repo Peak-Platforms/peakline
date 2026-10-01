@@ -139,13 +139,13 @@ export default function Dashboard() {
 
   return (
     <div className="wrap">
-      <div className="brand-row">
-        <video autoPlay muted loop playsInline className="brand-video">
-          <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
-        </video>
-        <span>Peak Line</span>
-        <button className="signout" onClick={signOut}>Sign out</button>
-      </div>
+    <div className="brand-row">
+  <video autoPlay muted loop playsInline className="brand-video">
+    <source src="https://storage.googleapis.com/xsenassets/peak%20platforms.mp4" type="video/mp4" />
+  </video>
+  <h1 className="brand-title">Peak Link</h1>
+  <button className="signout" onClick={signOut}>Sign out</button>
+   </div>
 
       <h1>Send a private line</h1>
       <p className="lede">
