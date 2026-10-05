@@ -74,10 +74,10 @@ export default function HostCallPage() {
         });
         callFrameRef.current = frame;
         
-        frame.setActiveSpeakerMode(false);
-
         await frame.join();
         if (cancelled) return;
+
+        frame.setActiveSpeakerMode(false);
 
         setStatus('in-call');
       } catch {
