@@ -16,6 +16,8 @@ type Props = {
   remoteLabel?: string;
   /** Accent color for the primary highlights. */
   accent?: string;
+  /** Professional's logo/photo, shown small in the bottom-right corner. */
+  logoUrl?: string | null;
 };
 
 type TrackInfo = { track: MediaStreamTrack | null; on: boolean };
@@ -232,6 +234,7 @@ export default function CallRoom({
   onError,
   remoteLabel = 'Other person',
   accent = '#F2A93B',
+  logoUrl = null,
 }: Props) {
   const callRef = useRef<DailyCall | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -498,6 +501,29 @@ export default function CallRoom({
         </button>
       )}
 
+      {/* Professional's logo, bottom right, just above the controls */}
+      {logoUrl && (
+        <img
+          src={logoUrl}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 12,
+            bottom: 'calc(max(18px, env(safe-area-inset-bottom)) + 70px)',
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: `2px solid ${accent}`,
+            background: '#fff',
+            opacity: 0.95,
+            zIndex: 4,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
       {/* Controls */}
       <div
         style={{
@@ -574,4 +600,3 @@ function Banner({ children, warn = false }: { children: React.ReactNode; warn?: 
     </div>
   );
 }
-
