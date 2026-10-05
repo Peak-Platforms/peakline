@@ -74,7 +74,9 @@ export default function HostCallPage() {
   if (status === 'left') {
     return (
       <CenteredMessage>
-        You left the call.
+        <div style={{ fontSize: 40, marginBottom: 8 }}>👋</div>
+        <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 4 }}>Goodbye!</div>
+        <div style={{ fontSize: 14, color: '#5B6472' }}>You've left the call.</div>
         <div style={{ marginTop: 16 }}>
           <button onClick={handleJoin}>Rejoin</button>
         </div>
@@ -124,3 +126,4 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
