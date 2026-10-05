@@ -118,6 +118,7 @@ export default function CallPage() {
         const frame = DailyIframe.createFrame(containerRef.current, {
           url: roomUrl,
           showLeaveButton: true,
+          activeSpeakerMode: false,
           iframeStyle: { width: '100%', height: '100%', border: '0' },
         });
         callFrameRef.current = frame;
