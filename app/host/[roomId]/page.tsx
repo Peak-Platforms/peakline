@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import CallRoom from '../../components/CallRoom';
 
-type Status = 'loading' | 'error' | 'ready' | 'joining' | 'in-call';
+type Status = 'loading' | 'error' | 'ready' | 'joining' | 'in-call' | 'left';
 
 export default function HostCallPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -11,8 +12,6 @@ export default function HostCallPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
-  const callFrameRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,60 +51,35 @@ export default function HostCallPage() {
   }, [roomId, router]);
 
   function handleJoin() {
-    setStatus('joining'); // container becomes visible now, before we connect
+    setStatus('joining');
   }
-
-  // Once 'joining' and the container is actually in the DOM and visible,
-  // create the Daily frame and connect.
-  useEffect(() => {
-    if (status !== 'joining' || !roomUrl || !containerRef.current) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const DailyIframe = (await import('@daily-co/daily-js')).default;
-        if (cancelled || !containerRef.current) return;
-
-        const frame = DailyIframe.createFrame(containerRef.current, {
-          url: roomUrl,
-          showLeaveButton: true,
-          activeSpeakerMode: false,
-          iframeStyle: { width: '100%', height: '100%', border: '0' },
-        });
-        callFrameRef.current = frame;
-        
-        await frame.join();
-        if (cancelled) return;
-
-        frame.setActiveSpeakerMode(false);
-
-        setStatus('in-call');
-      } catch {
-        if (!cancelled) {
-          setErrorMessage("Couldn't connect. You can try again.");
-          setStatus('error');
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [status, roomUrl]);
-
-  useEffect(() => {
-    return () => {
-      callFrameRef.current?.destroy();
-    };
-  }, []);
 
   if (status === 'loading') {
     return <CenteredMessage>Loading…</CenteredMessage>;
   }
 
   if (status === 'error') {
-    return <CenteredMessage>{errorMessage}</CenteredMessage>;
+    return (
+      <CenteredMessage>
+        {errorMessage}
+        {roomUrl && (
+          <div style={{ marginTop: 16 }}>
+            <button onClick={() => setStatus('ready')}>Try again</button>
+          </div>
+        )}
+      </CenteredMessage>
+    );
+  }
+
+  if (status === 'left') {
+    return (
+      <CenteredMessage>
+        You left the call.
+        <div style={{ marginTop: 16 }}>
+          <button onClick={handleJoin}>Rejoin</button>
+        </div>
+      </CenteredMessage>
+    );
   }
 
   if (status === 'ready') {
@@ -128,15 +102,25 @@ export default function HostCallPage() {
     );
   }
 
-  // 'joining' or 'in-call' — container is visible in both, so Daily's own
-  // connection/device-check UI and the call itself are both visible.
-  return <div ref={containerRef} style={{ width: '100vw', height: '100vh' }} />;
+  // 'joining' or 'in-call' — one CallRoom instance covers both so it never remounts.
+  return (
+    <CallRoom
+      roomUrl={roomUrl!}
+      remoteLabel="Client"
+      onJoined={() => setStatus('in-call')}
+      onLeft={() => setStatus('left')}
+      onError={(message) => {
+        setErrorMessage(message);
+        setStatus('error');
+      }}
+    />
+  );
 }
 
 function CenteredMessage({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ maxWidth: 320, textAlign: 'center' }}>{children}</p>
+      <div style={{ maxWidth: 320, textAlign: 'center' }}>{children}</div>
     </div>
   );
 }
