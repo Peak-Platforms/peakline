@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import CallRoom from '../../components/CallRoom';
 
-type Status = 'loading' | 'error' | 'ready' | 'joining' | 'in-call';
+type Status = 'loading' | 'error' | 'ready' | 'joining' | 'in-call' | 'left';
 
 type Branding = {
   displayName: string | null;
@@ -44,8 +45,6 @@ export default function CallPage() {
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
   const [showInAppWarning, setShowInAppWarning] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const callFrameRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const accent = branding?.accentColor || DEFAULT_ACCENT;
 
@@ -102,54 +101,12 @@ export default function CallPage() {
     setStatus('joining'); // container becomes visible now, before we connect
   }
 
-  // Step 2: once 'joining' and the container is actually in the DOM and
-  // visible, create the Daily frame and connect. Any Daily-side prompt or
-  // spinner is now visible to the user, not hidden.
-  useEffect(() => {
-    if (status !== 'joining' || !roomUrl || !containerRef.current) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const DailyIframe = (await import('@daily-co/daily-js')).default;
-        if (cancelled || !containerRef.current) return;
-
-        const frame = DailyIframe.createFrame(containerRef.current, {
-          url: roomUrl,
-          showLeaveButton: true,
-          activeSpeakerMode: false,
-          iframeStyle: { width: '100%', height: '100%', border: '0' },
-        });
-        callFrameRef.current = frame;
-
-        await frame.join();
-        if (cancelled) return;
-
-        frame.setActiveSpeakerMode(false);
-
-        // Real connection succeeded — now consume the link's quota.
-        fetch(`/api/call-info/${roomId}/confirm`, { method: 'POST' }).catch(() => {});
-
-        setStatus('in-call');
-      } catch {
-        if (!cancelled) {
-          setErrorMessage("Couldn't connect. You can try again with the same link.");
-          setStatus('error');
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [status, roomUrl, roomId]);
-
-  useEffect(() => {
-    return () => {
-      callFrameRef.current?.destroy();
-    };
-  }, []);
+  // Called by CallRoom once the connection to the room has really succeeded —
+  // now consume the link's quota.
+  function handleJoined() {
+    fetch(`/api/call-info/${roomId}/confirm`, { method: 'POST' }).catch(() => {});
+    setStatus('in-call');
+  }
 
   function tryAgain() {
     setRoomUrl(null);
@@ -172,6 +129,17 @@ export default function CallPage() {
         {errorMessage}
         <div style={{ marginTop: 16 }}>
           <button onClick={tryAgain} style={buttonStyle(accent)}>Try again</button>
+        </div>
+      </CenteredMessage>
+    );
+  }
+
+  if (status === 'left') {
+    return (
+      <CenteredMessage>
+        You left the call.
+        <div style={{ marginTop: 16 }}>
+          <button onClick={tryAgain} style={buttonStyle(accent)}>Rejoin</button>
         </div>
       </CenteredMessage>
     );
@@ -212,9 +180,20 @@ export default function CallPage() {
     );
   }
 
-  // 'joining' or 'in-call' — the container is visible in both, so whatever
-  // Daily needs to show (device check, spinner, the call itself) is visible.
-  return <div ref={containerRef} style={{ width: '100vw', height: '100vh' }} />;
+  // 'joining' or 'in-call' — one CallRoom instance covers both so it never remounts.
+  return (
+    <CallRoom
+      roomUrl={roomUrl!}
+      remoteLabel={branding?.displayName || 'Host'}
+      accent={accent}
+      onJoined={handleJoined}
+      onLeft={() => setStatus('left')}
+      onError={(message) => {
+        setErrorMessage(message);
+        setStatus('error');
+      }}
+    />
+  );
 }
 
 function BrandingHeader({ branding }: { branding: Branding | null }) {
@@ -282,7 +261,7 @@ const inAppWarningStyle: React.CSSProperties = {
 function CenteredMessage({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ maxWidth: 320, textAlign: 'center' }}>{children}</p>
+      <div style={{ maxWidth: 320, textAlign: 'center' }}>{children}</div>
     </div>
   );
 }
