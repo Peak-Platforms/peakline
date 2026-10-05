@@ -188,6 +188,7 @@ export default function CallPage() {
       roomUrl={roomUrl!}
       remoteLabel={branding?.displayName || 'Host'}
       accent={accent}
+      logoUrl={branding?.photoUrl}
       onJoined={handleJoined}
       onLeft={() => setStatus('left')}
       onError={(message) => {
