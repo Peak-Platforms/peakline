@@ -122,9 +122,10 @@ export default function CallPage() {
         });
         callFrameRef.current = frame;
 
-        frame.setActiveSpeakerMode(false);
         await frame.join();
         if (cancelled) return;
+
+        frame.setActiveSpeakerMode(false);
 
         // Real connection succeeded — now consume the link's quota.
         fetch(`/api/call-info/${roomId}/confirm`, { method: 'POST' }).catch(() => {});
