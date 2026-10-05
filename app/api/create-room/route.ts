@@ -64,6 +64,9 @@ export async function POST(req: Request) {
       name: roomName,
       properties: {
         exp: Math.round(Date.now() / 1000) + roomLifetimeSeconds,
+        // Anyone still in the room when it expires is disconnected, so a call
+        // left open can't keep billing past the window.
+        eject_at_room_exp: true,
         max_participants: 2,
         enable_recording: false
       }
