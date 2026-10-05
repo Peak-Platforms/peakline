@@ -122,6 +122,7 @@ export default function CallPage() {
         });
         callFrameRef.current = frame;
 
+        frame.setActiveSpeakerMode(false);
         await frame.join();
         if (cancelled) return;
 
