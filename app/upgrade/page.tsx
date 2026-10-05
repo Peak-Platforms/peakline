@@ -50,6 +50,12 @@ export default function UpgradePage() {
         <button onClick={handleUpgrade} disabled={loading}>
           {loading ? 'Redirecting…' : 'Upgrade to Unlimited — $39/mo'}
         </button>
+
+        <p style={{ marginTop: 16, fontSize: 12, color: '#8a94a3', lineHeight: 1.5 }}>
+          Unlimited calls for professional client use. Each call is one-to-one and lasts up to
+          6 hours. Fair use applies — see our{' '}
+          <a href="https://getpeaklink.com/terms" target="_blank" rel="noreferrer">Terms</a>.
+        </p>
       </div>
     </div>
   );
