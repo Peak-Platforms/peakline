@@ -68,6 +68,9 @@ export async function POST(req: Request) {
         // left open can't keep billing past the window.
         eject_at_room_exp: true,
         max_participants: 2,
+        // Direct peer-to-peer media for 1:1 calls (end-to-end encrypted per Daily).
+        // Daily switches to its SFU only if participants exceed this number.
+        sfu_switchover: 2,
         enable_recording: false
       }
     })

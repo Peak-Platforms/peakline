@@ -32,6 +32,9 @@ export async function POST(req: Request) {
       name: roomName,
       properties: {
         max_participants: 2,
+        // Direct peer-to-peer media for 1:1 calls (end-to-end encrypted per Daily).
+        // Daily switches to its SFU only if participants exceed this number.
+        sfu_switchover: 2,
         enable_recording: false
       }
     })
