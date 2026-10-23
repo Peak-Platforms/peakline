@@ -20,7 +20,8 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<CallRow[]>([]);
   const [userEmail, setUserEmail] = useState('');
-  const [tier, setTier] = useState<'basic' | 'unlimited'>('basic');
+  const [tier, setTier] = useState<'basic' | 'starter' | 'unlimited'>('basic');
+  const [minutesUsed, setMinutesUsed] = useState(0);
   const [usedThisMonth, setUsedThisMonth] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const router = useRouter();
@@ -38,7 +39,14 @@ export default function Dashboard() {
         .select('tier')
         .eq('id', user.id)
         .single();
-      if (profile?.tier) setTier(profile.tier as 'basic' | 'unlimited');
+      if (profile?.tier) {
+        setTier(profile.tier as 'basic' | 'starter' | 'unlimited');
+        if (profile.tier === 'starter') {
+          fetch('/api/usage').then(r => r.json()).then(u => {
+            if (typeof u.minutesUsed === 'number') setMinutesUsed(u.minutesUsed);
+          }).catch(() => {});
+        }
+      }
 
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
@@ -156,15 +164,24 @@ export default function Dashboard() {
       {tier === 'basic' && (
         <p className="usage">{usedThisMonth} of {BASIC_LIMIT} one-time calls used this month</p>
       )}
+      {tier === 'starter' && (
+        <p className="usage">{minutesUsed} of 200 minutes used this month</p>
+      )}
       <p className="usage"><Link href="/client-links" className="nav-link">View reusable client links →</Link></p>
       <p className="usage"><Link href="/dashboard/branding" className="nav-link">Edit client-facing branding →</Link></p>
-      {tier === 'basic' && (
+      {tier !== 'unlimited' && (
       <p className="usage"><Link href="/upgrade" className="nav-link">Upgrade to Unlimited →</Link></p>
       )}
       {limitReached ? (
         <div className="note upgrade">
-          <h2 className="upgrade-title">You've used all {BASIC_LIMIT} calls this month</h2>
-          <p className="hint">Upgrade to Unlimited to keep sending private video links — $39/mo, no monthly cap.</p>
+          <h2 className="upgrade-title">
+            {tier === 'starter' ? "You've used all 200 minutes this month" : `You've used all ${BASIC_LIMIT} calls this month`}
+          </h2>
+          <p className="hint">
+            {tier === 'starter'
+              ? 'Your minutes reset next month. Upgrade to Unlimited to keep sending private video links with no monthly cap.'
+              : 'Upgrade to keep sending private video links — Starter is $10/mo for 200 minutes, or go Unlimited with no monthly cap.'}
+          </p>
           <a href="/upgrade" className="upgrade-btn">Upgrade to Unlimited</a>
         </div>
       ) : (
@@ -196,7 +213,7 @@ export default function Dashboard() {
             ? "A fresh link, good for one call, then it's done."
             : 'One link this client can reuse, up to a set number of calls and minutes.'}
         </p>
-        {tier === 'basic' && (
+        {tier !== 'unlimited' && (
           <p className="hint" style={{ marginBottom: 16 }}>
             Reusable client links are available on Unlimited.{' '}
             <a href="/upgrade" className="nav-link">Upgrade →</a>

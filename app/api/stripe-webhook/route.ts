@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     if (userId) {
       await supabase
         .from('profiles')
-        .update({ tier: 'unlimited', stripe_subscription_id: subscriptionId })
+        .update({ tier: session.metadata?.plan === 'starter' ? 'starter' : 'unlimited', stripe_subscription_id: subscriptionId })
         .eq('id', userId);
     }
   }

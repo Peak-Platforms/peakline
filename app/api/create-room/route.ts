@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { getSecondsUsedThisMonth, STARTER_MONTHLY_MINUTES, STARTER_GRACE_MINUTES } from '@/lib/usage';
 
 const BASIC_MONTHLY_LIMIT = 3;
 const BASIC_ROOM_MINUTES = 60;
@@ -50,9 +51,26 @@ export async function POST(req: Request) {
 
   // Basic tier gets a 60-minute room window (link + call must complete within
   // that hour). Unlimited gets the generous 6-hour window as before.
+  // Starter: 200 minutes a month. A call already running when the minutes run out
+  // may finish, so the room stays open for the minutes left plus a short grace window.
+  let starterRoomSeconds = 0;
+  if (tier === 'starter') {
+    const usedSeconds = await getSecondsUsedThisMonth(user.id);
+    const remainingMinutes = STARTER_MONTHLY_MINUTES - Math.ceil(usedSeconds / 60);
+    if (remainingMinutes <= 0) {
+      return NextResponse.json(
+        { error: 'limit_reached', message: `You've used all ${STARTER_MONTHLY_MINUTES} minutes this month.` },
+        { status: 402 }
+      );
+    }
+    starterRoomSeconds = Math.min(remainingMinutes + STARTER_GRACE_MINUTES, UNLIMITED_ROOM_HOURS * 60) * 60;
+  }
+
   const roomLifetimeSeconds = tier === 'basic'
     ? BASIC_ROOM_MINUTES * 60
-    : UNLIMITED_ROOM_HOURS * 60 * 60;
+    : tier === 'starter'
+      ? starterRoomSeconds
+      : UNLIMITED_ROOM_HOURS * 60 * 60;
 
   const dailyRes = await fetch('https://api.daily.co/v1/rooms', {
     method: 'POST',
