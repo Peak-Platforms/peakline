@@ -252,6 +252,18 @@ export default function CallRoom({
   const [soundBlocked, setSoundBlocked] = useState(false);
   const hintShown = useRef(false);
 
+  // Test aid: open the call link with ?debug=1 to see whether the call is
+  // direct (peer-to-peer) or going through Daily's servers. Hidden otherwise.
+  const [debugMode, setDebugMode] = useState(false);
+  const [topology, setTopology] = useState('');
+  useEffect(() => {
+    try {
+      setDebugMode(new URLSearchParams(window.location.search).get('debug') === '1');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const refresh = useCallback(() => {
     const call = callRef.current;
     if (!call) return;
@@ -342,6 +354,27 @@ export default function CallRoom({
 
   /* One-time hint when the other person first appears. */
   const remotePresent = !!snap.remote?.present;
+
+  useEffect(() => {
+    if (!debugMode || !connected) return;
+    let stopped = false;
+    const check = async () => {
+      const call = callRef.current;
+      if (!call) return;
+      try {
+        const res = await (call as any).getNetworkTopology();
+        if (!stopped) setTopology(res?.topology || res?.error || 'unknown');
+      } catch {
+        if (!stopped) setTopology('unknown');
+      }
+    };
+    check();
+    const t = setInterval(check, 3000);
+    return () => {
+      stopped = true;
+      clearInterval(t);
+    };
+  }, [debugMode, connected, remotePresent]);
   useEffect(() => {
     if (remotePresent && !hintShown.current) {
       hintShown.current = true;
@@ -473,6 +506,15 @@ export default function CallRoom({
         {connected && !remotePresent && <Banner>Waiting for the other person to join…</Banner>}
         {notice && <Banner warn>{notice}</Banner>}
         {hint && <Banner>Tap the small picture to swap views</Banner>}
+        {debugMode && connected && (
+          <Banner>
+            {topology === 'peer'
+              ? 'Direct (peer-to-peer)'
+              : topology === 'sfu'
+                ? 'Via server (not peer-to-peer)'
+                : 'Checking connection type…'}
+          </Banner>
+        )}
       </div>
 
       {soundBlocked && (
