@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { createAdminClient } from '@/lib/supabase-admin';
-import { deleteDailyRoom, getBranding, getGroupRoom } from '@/lib/groups';
+import { deleteDailyRoom, getBranding, getGroupRoom, hostKeyMatches } from '@/lib/groups';
 
 // Public: what the join page needs to show before anyone joins.
 export async function GET(
@@ -20,10 +20,18 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser();
   const branding = await getBranding(room.user_id);
 
+  // A staff link carries ?host=<key>. A valid key makes the visitor a host.
+  const key = new URL(req.url).searchParams.get('host');
+  const isOwner = user?.id === room.user_id;
+  const keyOk = hostKeyMatches(room, key);
+
   return NextResponse.json({
     name: room.name,
     maxParticipants: room.max_participants,
-    isHost: user?.id === room.user_id,
+    isHost: isOwner || keyOk,
+    isOwner,
+    // True when a staff link was used but has since been reset.
+    staffLinkExpired: !!key && !keyOk && !isOwner,
     branding,
   });
 }

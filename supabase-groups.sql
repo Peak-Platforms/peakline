@@ -45,6 +45,11 @@ alter table group_plans alter column max_participants set default 25;
 alter table group_rooms alter column max_participants set default 25;
 update group_plans set max_participants = 25 where max_participants = 12;
 
+-- Staff links: a second, secret link per room that lets the business's own
+-- people start meetings. The secret is stored here; resetting it on the Groups
+-- page replaces it.
+alter table group_rooms add column if not exists host_key text;
+
 -- To turn Groups on for one account, run the line below with that account's
 -- sign-in email. Delete the row again to turn it off (their room stops admitting people).
 --

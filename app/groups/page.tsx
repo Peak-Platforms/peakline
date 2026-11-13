@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-type Room = { id: string; name: string; slug: string; max_participants: number; created_at: string };
+type Room = { id: string; name: string; slug: string; max_participants: number; host_key: string | null; created_at: string };
 
 export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
@@ -16,8 +16,9 @@ export default function GroupsPage() {
   const [status, setStatus] = useState('');
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState('');
-  // Deleting takes a second tap to confirm.
+  // Deleting, and resetting the staff link, each take a second tap to confirm.
   const [confirmDelete, setConfirmDelete] = useState('');
+  const [confirmReset, setConfirmReset] = useState('');
   const [origin, setOrigin] = useState('');
   const router = useRouter();
 
@@ -87,6 +88,32 @@ export default function GroupsPage() {
     setTimeout(() => setCopiedId(''), 1800);
   }
 
+  const staffLinkFor = (room: Room) => `${linkFor(room.slug)}?host=${room.host_key}`;
+
+  function copyStaffLink(room: Room) {
+    navigator.clipboard.writeText(staffLinkFor(room));
+    setCopiedId(room.id + '-staff');
+    setTimeout(() => setCopiedId(''), 1800);
+  }
+
+  // Makes a new staff link. The old one stops working straight away.
+  async function resetStaffLink(room: Room) {
+    if (room.host_key && confirmReset !== room.id) { setConfirmReset(room.id); return; }
+    setConfirmReset('');
+    setStatus('');
+    try {
+      const res = await fetch(`/api/groups/${room.slug}/host-key`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.hostKey) {
+        setStatus(data.message || 'Could not reset the staff link.');
+        return;
+      }
+      setRooms(rooms.map((r) => (r.id === room.id ? { ...r, host_key: data.hostKey } : r)));
+    } catch {
+      setStatus('Network error resetting the staff link.');
+    }
+  }
+
   const canCreate = enabled && rooms.length < maxRooms;
 
   return (
@@ -128,7 +155,33 @@ export default function GroupsPage() {
                 {copiedId === room.id && <div className="toast">Copied</div>}
               </div>
               <button onClick={() => router.push(`/meet/${room.slug}`)}>Start meeting</button>
-              <button className="secondary" onClick={() => copyLink(room)}>Copy link</button>
+              <button className="secondary" onClick={() => copyLink(room)}>Copy guest link</button>
+
+              <div className="result" style={{ marginTop: 18, paddingTop: 14 }}>
+                <p className="hint">
+                  <strong>Staff link.</strong> Anyone with this link can start a meeting and has host
+                  controls. Give it only to your own team.
+                </p>
+                {room.host_key ? (
+                  <>
+                    <div className="link">{staffLinkFor(room)}</div>
+                    {copiedId === room.id + '-staff' && <div className="toast">Copied</div>}
+                  </>
+                ) : (
+                  <p className="hint">This room doesn't have a staff link yet.</p>
+                )}
+              </div>
+              {room.host_key && (
+                <button className="secondary" onClick={() => copyStaffLink(room)}>Copy staff link</button>
+              )}
+              <button className="secondary" onClick={() => resetStaffLink(room)}>
+                {!room.host_key
+                  ? 'Create staff link'
+                  : confirmReset === room.id
+                    ? 'Tap again: the current staff link will stop working'
+                    : 'Reset staff link'}
+              </button>
+
               <button className="secondary" onClick={() => deleteRoom(room)}>
                 {confirmDelete === room.id ? 'Tap again to delete this room and its link' : 'Delete room'}
               </button>
@@ -137,7 +190,8 @@ export default function GroupsPage() {
 
           {rooms.length > 0 && (
             <p className="mode-hint" style={{ marginTop: 14 }}>
-              Guests are let in once you have started the meeting, and wait on the link until then.
+              Guests are let in once you or someone with the staff link has started the meeting, and
+              wait on the guest link until then.
               Each person can stay up to 6 hours. Group meetings are encrypted in transit and pass
               through our video provider's servers; they are not end-to-end encrypted the way
               one-to-one calls are.

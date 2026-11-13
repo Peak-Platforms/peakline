@@ -7,14 +7,17 @@ import {
   getGroupPlan,
   getGroupRoom,
   getHeadcount,
+  hostKeyMatches,
 } from '@/lib/groups';
 
 // Hands out a pass into the room.
 //
-// The host (the signed-in owner) can always get in. Everyone else is let in only
-// while a meeting is under way, which is what stops a standing link from being
-// used when the business isn't there. The first person into an empty room is
-// therefore always the host. Once the last person leaves, the room locks again.
+// Hosts can always get in. A host is either the signed-in owner of the room or
+// anyone who came in on the room's staff link (the owner hands that out to the
+// people allowed to start meetings, and can reset it). Everyone else is let in
+// only while a meeting is under way, which is what stops the public link from
+// being used when nobody from the business is there. The first person into an
+// empty room is therefore always a host. Once the last person leaves, it locks again.
 export async function POST(
   req: Request,
   { params }: { params: { slug: string } }
@@ -38,19 +41,21 @@ export async function POST(
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const isHost = user?.id === room.user_id;
+  const isOwner = user?.id === room.user_id;
 
   const body = await req.json().catch(() => ({}));
   let name = cleanPersonName(body?.name);
+  const isHost = isOwner || hostKeyMatches(room, body?.hostKey);
+
+  // The owner's name can be filled in from their profile. Everyone else types one.
+  if (!name && !isOwner) {
+    return NextResponse.json(
+      { error: 'name_required', message: 'Enter your name to join.' },
+      { status: 400 }
+    );
+  }
 
   if (!isHost) {
-    if (!name) {
-      return NextResponse.json(
-        { error: 'name_required', message: 'Enter your name to join.' },
-        { status: 400 }
-      );
-    }
-
     const headcount = await getHeadcount(room.daily_room_name);
     if (headcount === null) {
       return NextResponse.json(
@@ -76,7 +81,7 @@ export async function POST(
     roomName: room.daily_room_name,
     userName: name,
     isHost,
-    hostUserId: isHost ? user!.id : undefined,
+    hostUserId: isOwner ? user!.id : undefined,
   });
 
   if (!token) {

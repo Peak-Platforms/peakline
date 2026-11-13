@@ -1,3 +1,4 @@
+import { randomBytes, timingSafeEqual } from 'crypto';
 import { createAdminClient } from '@/lib/supabase-admin';
 
 // Server-side helpers for Peak Link Groups (standing multi-person rooms).
@@ -22,6 +23,8 @@ export type GroupRoom = {
   daily_room_name: string;
   room_url: string;
   max_participants: number;
+  /** Secret that makes up the staff link. Null on rooms made before staff links existed. */
+  host_key: string | null;
   created_at: string;
 };
 
@@ -53,6 +56,19 @@ export function makeSlug(name: string): string {
     .replace(/-+$/g, '');
   const random = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
   return (base ? base + '-' : '') + random;
+}
+
+// The secret part of a room's staff link. Long and random, so it can't be guessed.
+export function makeHostKey(): string {
+  return randomBytes(18).toString('base64url');
+}
+
+// True if `key` is this room's current staff-link secret.
+export function hostKeyMatches(room: GroupRoom, key: unknown): boolean {
+  if (typeof key !== 'string' || !key || !room.host_key) return false;
+  const given = Buffer.from(key);
+  const real = Buffer.from(room.host_key);
+  return given.length === real.length && timingSafeEqual(given, real);
 }
 
 // Returns the account's Groups limits, or null if Groups is not turned on for it.

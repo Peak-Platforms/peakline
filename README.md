@@ -68,8 +68,11 @@ from the 1:1 call code: `app/meet`, `app/groups`, `app/api/groups`, `lib/groups.
 - Groups is off for every account until a row is added to `group_plans` (the SQL file
   ends with the line to do it). No Stripe price is wired to it yet.
 - The Daily room is private. Everyone joins with a pass from `/api/groups/<slug>/join`.
-  The signed-in owner can always get in; guests are let in only while someone is in the
-  room, so the link does nothing when the business isn't there.
+  Hosts can always get in; guests are let in only while someone is in the room, so the
+  guest link does nothing when the business isn't there.
+- A host is the signed-in owner, or anyone using the room's staff link
+  (`/meet/<slug>?host=<key>`). The owner copies and resets the staff link on the Groups
+  page. Staff need no Peak Link account.
 - Each pass lasts 6 hours, then that person is disconnected.
 - Rooms hold up to 25 people. The meeting screen is a paged gallery (9 per page, 6 on a
   phone) that brings whoever is speaking onto the first page, and each device only

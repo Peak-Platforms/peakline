@@ -6,6 +6,7 @@ import {
   createDailyGroupRoom,
   deleteDailyRoom,
   getGroupPlan,
+  makeHostKey,
   makeSlug,
 } from '@/lib/groups';
 
@@ -21,7 +22,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data: rooms } = await admin
     .from('group_rooms')
-    .select('id, name, slug, max_participants, created_at')
+    .select('id, name, slug, max_participants, host_key, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 
@@ -91,8 +92,9 @@ export async function POST(req: Request) {
       daily_room_name: dailyRoomName,
       room_url: daily.url,
       max_participants: plan.maxParticipants,
+      host_key: makeHostKey(),
     })
-    .select('id, name, slug, max_participants, created_at')
+    .select('id, name, slug, max_participants, host_key, created_at')
     .single();
 
   if (dbError || !room) {

@@ -1,8 +1,10 @@
 'use client';
 
-// The one link everybody uses for a Peak Link Groups room, host included.
-// Guests type their name and join from the browser with no account. The host is
-// recognised by being signed in to the Peak Link account that owns the room.
+// The join page for a Peak Link Groups room.
+// Guests type their name and join from the browser with no account, once a
+// meeting is under way. Hosts can start the meeting. A host is the room's owner
+// (signed in to Peak Link) or anyone who opened the room's staff link, which is
+// this same page with ?host=<key> on the end.
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -39,6 +41,9 @@ export default function MeetPage() {
   const [roomName, setRoomName] = useState('');
   const [branding, setBranding] = useState<Branding | null>(null);
   const [isHost, setIsHost] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [staffLinkExpired, setStaffLinkExpired] = useState(false);
+  const hostKey = useRef('');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [pass, setPass] = useState<{ roomUrl: string; token: string } | null>(null);
@@ -55,7 +60,15 @@ export default function MeetPage() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`/api/groups/${slug}`)
+    // A staff link carries its key on the end of the address.
+    try {
+      hostKey.current = new URLSearchParams(window.location.search).get('host') || '';
+    } catch {
+      hostKey.current = '';
+    }
+    const query = hostKey.current ? `?host=${encodeURIComponent(hostKey.current)}` : '';
+
+    fetch(`/api/groups/${slug}${query}`)
       .then(async (res) => {
         const body = await res.json();
         if (cancelled) return;
@@ -67,6 +80,8 @@ export default function MeetPage() {
         setRoomName(body.name);
         setBranding(body.branding || null);
         setIsHost(!!body.isHost);
+        setIsOwner(!!body.isOwner);
+        setStaffLinkExpired(!!body.staffLinkExpired);
 
         let saved = '';
         try {
@@ -74,7 +89,7 @@ export default function MeetPage() {
         } catch {
           /* private browsing: just start with an empty name */
         }
-        setName(body.isHost ? body.branding?.displayName || saved : saved);
+        setName(body.isOwner ? body.branding?.displayName || saved : saved);
         setStatus('ready');
       })
       .catch(() => {
@@ -106,7 +121,7 @@ export default function MeetPage() {
       res = await fetch(`/api/groups/${slug}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: name.trim(), hostKey: hostKey.current || undefined }),
       });
       body = await res.json();
     } catch {
@@ -138,7 +153,7 @@ export default function MeetPage() {
 
   async function handleJoin() {
     setMessage('');
-    if (!isHost && !name.trim()) {
+    if (!isOwner && !name.trim()) {
       setMessage('Enter your name to join.');
       return;
     }
@@ -262,8 +277,21 @@ export default function MeetPage() {
         ) : (
           <>
             <p style={{ margin: '20px 0 16px', fontSize: 15, color: '#333' }}>
-              {isHost ? "You're the host of this room." : 'Enter your name to join the meeting.'}
+              {isOwner
+                ? "You're the host of this room."
+                : isHost
+                  ? 'You can start this meeting. Enter your name.'
+                  : 'Enter your name to join the meeting.'}
             </p>
+
+            {staffLinkExpired && (
+              <div style={inAppWarningStyle}>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.4 }}>
+                  This staff link has been replaced, so it can no longer start meetings. Ask the
+                  room's owner for the new one. You can still join as a guest.
+                </p>
+              </div>
+            )}
 
             {showInAppWarning && (
               <div style={inAppWarningStyle}>
