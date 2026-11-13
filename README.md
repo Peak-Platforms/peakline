@@ -71,6 +71,9 @@ from the 1:1 call code: `app/meet`, `app/groups`, `app/api/groups`, `lib/groups.
   The signed-in owner can always get in; guests are let in only while someone is in the
   room, so the link does nothing when the business isn't there.
 - Each pass lasts 6 hours, then that person is disconnected.
+- Rooms hold up to 25 people. The meeting screen is a paged gallery (9 per page, 6 on a
+  phone) that brings whoever is speaking onto the first page, and each device only
+  downloads video for the people on screen. The layout rules are in `lib/group-layout.ts`.
 - Group rooms go through Daily's servers (not peer-to-peer), so they are encrypted in
   transit, not end-to-end. The 1:1 rooms are unchanged.
 

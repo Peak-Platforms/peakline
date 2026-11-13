@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { DailyCall, DailyParticipant, DailyTrackState } from '@daily-co/daily-js';
+import { bestColumns, pageSizeFor, promoteSpeaker, reconcileOrder, stripSizeFor } from '@/lib/group-layout';
 
 export type LeftReason = 'left' | 'removed' | 'ended';
 
@@ -363,41 +364,56 @@ function Tile({
   );
 }
 
-// Picks the number of columns that gives the largest tiles for this many people
-// in a box this size, so two people sit side by side on a laptop and stacked on a phone.
-function bestColumns(count: number, width: number, height: number): number {
-  if (count <= 1 || !width || !height) return 1;
-  const ratio = 4 / 3;
-  let best = 1;
-  let bestWidth = 0;
-  for (let cols = 1; cols <= count; cols++) {
-    const rows = Math.ceil(count / cols);
-    const tileWidth = Math.min(width / cols, (height / rows) * ratio);
-    if (tileWidth > bestWidth + 0.5) {
-      bestWidth = tileWidth;
-      best = cols;
-    }
-  }
-  return best;
-}
+const pagerButton: React.CSSProperties = {
+  width: 40,
+  height: 32,
+  margin: 0,
+  padding: 0,
+  borderRadius: 16,
+  border: 'none',
+  background: 'rgba(255,255,255,0.14)',
+  color: '#fff',
+  fontSize: 18,
+  lineHeight: '30px',
+  cursor: 'pointer',
+  flex: '0 0 auto',
+};
 
 /**
- * The picture area: everyone in a grid, or, while someone shares their screen,
- * the shared screen large with everyone in a strip underneath.
+ * The picture area. Normally a gallery showing one page of people at a time, with
+ * arrows (or a swipe) to reach the rest. While someone shares their screen, the
+ * shared screen is large with a few people in a strip underneath.
+ *
+ * Only the people passed in as `visible` are drawn, and the meeting screen only
+ * downloads video for those people, which is what lets a room hold 25.
  */
 export function GroupStage({
-  people,
+  visible,
+  total,
+  sharer,
+  page,
+  pageCount,
+  onPage,
   activeId,
   accent,
   onStopShare,
 }: {
-  people: Person[];
+  /** The people to draw right now: one gallery page, or the strip under a shared screen. */
+  visible: Person[];
+  /** Everyone in the meeting, shown or not. */
+  total: number;
+  /** Whoever is sharing their screen, if anyone. They need not be in `visible`. */
+  sharer: Person | null;
+  page: number;
+  pageCount: number;
+  onPage: (page: number) => void;
   activeId: string | null;
   accent: string;
   onStopShare?: () => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const touchX = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     const el = boxRef.current;
@@ -407,13 +423,14 @@ export function GroupStage({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [!!sharer]);
 
-  const sharer = people.find((p) => p.screen) || null;
+  const ring = (p: Person) => p.id === activeId && total > 2;
 
   if (sharer) {
+    const more = total - visible.length;
     return (
-      <div ref={boxRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, padding: 8 }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, padding: 8 }}>
         <div style={{ position: 'relative', flex: 1, minHeight: 0, borderRadius: 10, overflow: 'hidden', background: '#000' }}>
           {sharer.local ? (
             // Showing your own shared screen back to you makes a hall of mirrors.
@@ -475,36 +492,107 @@ export function GroupStage({
             </>
           )}
         </div>
-        <div style={{ flex: '0 0 auto', display: 'flex', gap: 8, overflowX: 'auto', height: 96 }}>
-          {people.map((p) => (
-            <div key={p.id} style={{ flex: '0 0 128px', height: '100%' }}>
-              <Tile person={p} speaking={p.id === activeId && people.length > 2} accent={accent} compact />
+        <div style={{ flex: '0 0 auto', display: 'flex', gap: 8, height: 96 }}>
+          {visible.map((p) => (
+            <div key={p.id} style={{ flex: '0 1 128px', minWidth: 0, height: '100%' }}>
+              <Tile person={p} speaking={ring(p)} accent={accent} compact />
             </div>
           ))}
+          {more > 0 && (
+            <div
+              style={{
+                flex: '0 0 64px',
+                height: '100%',
+                borderRadius: 10,
+                background: '#1c2430',
+                color: 'rgba(255,255,255,0.75)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+              title={`${more} more in this meeting`}
+            >
+              +{more}
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  const cols = bestColumns(people.length, size.w, size.h);
-  const rows = Math.max(1, Math.ceil(people.length / cols));
+  const cols = bestColumns(visible.length, size.w, size.h);
+  const rows = Math.max(1, Math.ceil(visible.length / cols));
+  const paged = pageCount > 1;
+  const go = (to: number) => onPage(Math.max(0, Math.min(pageCount - 1, to)));
 
   return (
-    <div
-      ref={boxRef}
-      style={{
-        flex: 1,
-        minHeight: 0,
-        display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-        gap: 8,
-        padding: 8,
-      }}
-    >
-      {people.map((p) => (
-        <Tile key={p.id} person={p} speaking={p.id === activeId && people.length > 2} accent={accent} />
-      ))}
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div
+        ref={boxRef}
+        onTouchStart={paged ? (e) => { touchX.current = e.touches[0]?.clientX ?? null; } : undefined}
+        onTouchEnd={
+          paged
+            ? (e) => {
+                const from = touchX.current;
+                touchX.current = null;
+                const to = e.changedTouches[0]?.clientX;
+                if (from === null || to === undefined) return;
+                if (to - from < -60) go(page + 1);
+                else if (to - from > 60) go(page - 1);
+              }
+            : undefined
+        }
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          gap: 8,
+          padding: 8,
+        }}
+      >
+        {visible.map((p) => (
+          <Tile key={p.id} person={p} speaking={ring(p)} accent={accent} />
+        ))}
+      </div>
+
+      {paged && (
+        <div
+          style={{
+            flex: '0 0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 14,
+            padding: '0 8px 2px',
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Previous page of people"
+            onClick={() => go(page - 1)}
+            disabled={page === 0}
+            style={{ ...pagerButton, opacity: page === 0 ? 0.35 : 1 }}
+          >
+            ‹
+          </button>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', minWidth: 74, textAlign: 'center' }}>
+            Page {page + 1} of {pageCount}
+          </span>
+          <button
+            type="button"
+            aria-label="Next page of people"
+            onClick={() => go(page + 1)}
+            disabled={page >= pageCount - 1}
+            style={{ ...pagerButton, opacity: page >= pageCount - 1 ? 0.35 : 1 }}
+          >
+            ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -696,10 +784,28 @@ export default function GroupRoom({
   const [notice, setNotice] = useState('');
   const [soundBlocked, setSoundBlocked] = useState(false);
 
+  // Gallery paging. `order` is everyone except you, in the order their tiles appear.
+  const [order, setOrder] = useState<string[]>([]);
+  const [page, setPage] = useState(0);
+  const [viewWidth, setViewWidth] = useState(0);
+  const lastSpoke = useRef<Record<string, number>>({});
+  const pageSizeRef = useRef(9);
+  // Which people's video this device is currently downloading.
+  const videoOn = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const measure = () => setViewWidth(window.innerWidth);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
   const refresh = useCallback(() => {
     const call = callRef.current;
     if (!call) return;
-    setPeople(listPeople(call));
+    const list = listPeople(call);
+    setPeople(list);
+    setOrder((prev) => reconcileOrder(prev, list.filter((p) => !p.local).map((p) => p.id)));
     setMicOn(call.localAudio());
     setCamOn(call.localVideo());
   }, []);
@@ -710,6 +816,8 @@ export default function GroupRoom({
     let call: DailyCall | null = null;
     finishedRef.current = false;
     reasonRef.current = 'left';
+    videoOn.current = {};
+    lastSpoke.current = {};
 
     const finishWithError = (message: string) => {
       if (cancelled || finishedRef.current) return;
@@ -751,7 +859,13 @@ export default function GroupRoom({
         call.on('participant-left', onChange);
         call.on('joined-meeting', onChange);
         call.on('active-speaker-change', (e) => {
-          setActiveId(e?.activeSpeaker?.peerId ?? null);
+          const id = e?.activeSpeaker?.peerId ?? null;
+          setActiveId(id);
+          if (id) {
+            lastSpoke.current[id] = Date.now();
+            // Whoever starts talking is brought onto the first page.
+            setOrder((prev) => promoteSpeaker(prev, id, pageSizeRef.current - 1, lastSpoke.current));
+          }
         });
         call.on('camera-error', () => {
           setNotice('Camera or microphone is blocked. Check your browser permissions, then rejoin.');
@@ -767,7 +881,9 @@ export default function GroupRoom({
         });
         call.on('left-meeting', () => finishLeft());
 
-        await call.join({ url: roomUrl, token });
+        // Nothing is downloaded automatically. The effect further down asks for
+        // everyone's sound, and video only for the people on screen.
+        await call.join({ url: roomUrl, token, subscribeToTracksAutomatically: false });
         if (cancelled) return;
 
         setConnected(true);
@@ -798,6 +914,48 @@ export default function GroupRoom({
   const me = people.find((p) => p.local) || null;
   const sharing = !!me?.screen;
   const someoneElseSharing = people.some((p) => !p.local && p.screen);
+  const sharer = people.find((p) => p.screen) || null;
+
+  // You first, then everyone else in gallery order.
+  const byId = new Map(people.map((p) => [p.id, p]));
+  const others = order.map((id) => byId.get(id)).filter((p): p is Person => !!p && !p.local);
+  const listed = new Set(others.map((p) => p.id));
+  const ordered = [
+    ...(me ? [me] : []),
+    ...others,
+    ...people.filter((p) => !p.local && !listed.has(p.id)),
+  ];
+
+  const pageSize = pageSizeFor(viewWidth);
+  pageSizeRef.current = pageSize;
+  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
+  const safePage = Math.min(page, pageCount - 1);
+  const visible = sharer
+    ? ordered.slice(0, stripSizeFor(viewWidth))
+    : ordered.slice(safePage * pageSize, (safePage + 1) * pageSize);
+
+  /* Ask for everyone's sound, and video only for the people on screen right now. */
+  const everyoneKey = people.filter((p) => !p.local).map((p) => p.id).join(',');
+  const visibleKey = visible.filter((p) => !p.local).map((p) => p.id).join(',');
+  useEffect(() => {
+    const call = callRef.current;
+    if (!call || !connected) return;
+    const everyone = everyoneKey ? everyoneKey.split(',') : [];
+    const onScreen = new Set(visibleKey ? visibleKey.split(',') : []);
+    const updates: Record<string, { setSubscribedTracks: { audio: boolean; video: boolean; screenVideo: boolean; screenAudio: boolean } }> = {};
+
+    for (const id of everyone) {
+      const want = onScreen.has(id);
+      if (videoOn.current[id] !== want) {
+        videoOn.current[id] = want;
+        updates[id] = { setSubscribedTracks: { audio: true, video: want, screenVideo: true, screenAudio: true } };
+      }
+    }
+    for (const id of Object.keys(videoOn.current)) {
+      if (!everyone.includes(id)) delete videoOn.current[id];
+    }
+    if (Object.keys(updates).length > 0) call.updateParticipants(updates);
+  }, [connected, everyoneKey, visibleKey]);
 
   const toggleMic = () => callRef.current?.setLocalAudio(!callRef.current.localAudio());
   const toggleCam = () => callRef.current?.setLocalVideo(!callRef.current.localVideo());
@@ -900,7 +1058,17 @@ export default function GroupRoom({
         </div>
       </div>
 
-      <GroupStage people={people} activeId={activeId} accent={accent} onStopShare={toggleShare} />
+      <GroupStage
+        visible={visible}
+        total={people.length}
+        sharer={sharer}
+        page={safePage}
+        pageCount={pageCount}
+        onPage={setPage}
+        activeId={activeId}
+        accent={accent}
+        onStopShare={toggleShare}
+      />
 
       {people.map((p) => (p.audio ? <AudioSink key={p.id + '-a'} track={p.audio} onBlocked={() => setSoundBlocked(true)} /> : null))}
       {people.map((p) =>

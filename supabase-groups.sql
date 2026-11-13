@@ -7,7 +7,7 @@
 create table if not exists group_plans (
   user_id uuid primary key references auth.users(id) on delete cascade,
   max_rooms integer not null default 1,
-  max_participants integer not null default 12,
+  max_participants integer not null default 25,
   created_at timestamptz not null default now()
 );
 
@@ -26,7 +26,7 @@ create table if not exists group_rooms (
   slug text not null unique,
   daily_room_name text not null unique,
   room_url text not null,
-  max_participants integer not null default 12,
+  max_participants integer not null default 25,
   created_at timestamptz not null default now()
 );
 
@@ -36,6 +36,14 @@ drop policy if exists "Users see only their own group rooms" on group_rooms;
 create policy "Users see only their own group rooms"
   on group_rooms for select
   using (auth.uid() = user_id);
+
+-- Rooms hold up to 25 people (they were first set up for 12). These lines bring
+-- a database created with the earlier version of this file up to date. A room
+-- made before this change keeps its old limit: delete it on the Groups page and
+-- create it again.
+alter table group_plans alter column max_participants set default 25;
+alter table group_rooms alter column max_participants set default 25;
+update group_plans set max_participants = 25 where max_participants = 12;
 
 -- To turn Groups on for one account, run the line below with that account's
 -- sign-in email. Delete the row again to turn it off (their room stops admitting people).

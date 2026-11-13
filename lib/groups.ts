@@ -103,6 +103,11 @@ export async function createDailyGroupRoom(roomName: string, maxParticipants: nu
       properties: {
         max_participants: maxParticipants,
         enable_screenshare: true,
+        // Always route through Daily's servers, never peer-to-peer. The meeting
+        // screen only downloads video for the people on screen, and Daily can
+        // only do that in this mode. (0.5 is Daily's own default; set here so a
+        // domain-wide change made for the 1:1 rooms can't affect group rooms.)
+        sfu_switchover: 0.5,
       },
     }),
   });
