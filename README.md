@@ -57,6 +57,23 @@ Two spots to edit, both marked in the code:
 - Same file — `--brand-color` in the `<style>` block, and the matching `accent`
   color inside `app/api/create-room/route.ts` so the call screen matches too
 
+## Groups (standing multi-person rooms)
+
+A group room is one permanent link (`/meet/<slug>`) for meetings with several people,
+with screen sharing and host controls (mute, remove, end for everyone). It is separate
+from the 1:1 call code: `app/meet`, `app/groups`, `app/api/groups`, `lib/groups.ts` and
+`app/components/GroupRoom.tsx`.
+
+- Run `supabase-groups.sql` once in the Supabase SQL editor.
+- Groups is off for every account until a row is added to `group_plans` (the SQL file
+  ends with the line to do it). No Stripe price is wired to it yet.
+- The Daily room is private. Everyone joins with a pass from `/api/groups/<slug>/join`.
+  The signed-in owner can always get in; guests are let in only while someone is in the
+  room, so the link does nothing when the business isn't there.
+- Each pass lasts 6 hours, then that person is disconnected.
+- Group rooms go through Daily's servers (not peer-to-peer), so they are encrypted in
+  transit, not end-to-end. The 1:1 rooms are unchanged.
+
 ## What's intentionally not built yet
 
 - Client-initiated calls (a client requesting a call instead of the professional
