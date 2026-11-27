@@ -66,7 +66,7 @@ export async function verifyStation(school: string, password: string): Promise<b
 export function cleanSchool(v: unknown): string | null {
   if (typeof v !== 'string') return null;
   const s = v.trim().toLowerCase();
-  return /^[a-z0-9]{1,32}$/.test(s) ? s : null;
+  return /^[a-z0-9][a-z0-9-]{0,31}$/.test(s) ? s : null;
 }
 
 // ---------- Daily helpers ----------
