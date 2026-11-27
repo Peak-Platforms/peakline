@@ -1,4 +1,5 @@
 import {
+  GUEST_LINK_HOURS,
   RTMP_INGEST_BASE,
   cleanSchool,
   dailyGet,
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
     fps: 24,
     videoBitrate: 1000,
     audioBitrate: 64,
-    maxDuration: 2 * 60 * 60,
+    maxDuration: GUEST_LINK_HOURS * 60 * 60,
     layout: { preset: 'single-participant', session_id: guest.id },
   });
 

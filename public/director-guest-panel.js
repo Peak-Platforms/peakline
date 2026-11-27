@@ -34,7 +34,7 @@
   box.innerHTML =
     '<div class="dgp-h"><b>GUESTS</b><span id="dgpCount" style="color:#888">0</span></div>' +
     '<div class="dgp-b"><button id="dgpInvite">+ Invite guest</button><div id="dgpList"></div>' +
-    '<div style="margin-top:8px;color:#777">The guest\'s picture appears as a tile a few seconds after they join. The link works for 2 hours.</div></div>';
+    '<div style="margin-top:8px;color:#777">The guest\'s picture appears as a tile a few seconds after they join. The link and call last up to 6 hours. Press End guest when you finish.</div></div>';
   document.body.appendChild(box);
   box.querySelector('.dgp-h').addEventListener('click', function () { box.classList.toggle('open'); });
   document.getElementById('dgpInvite').addEventListener('click', invite);

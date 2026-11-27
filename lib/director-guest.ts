@@ -4,7 +4,7 @@
 import { NextResponse } from 'next/server';
 
 export const MAX_GUESTS = Number(process.env.DIRECTOR_MAX_GUESTS || 3);
-export const GUEST_LINK_HOURS = 2;
+export const GUEST_LINK_HOURS = 6;
 export const GUEST_ROOM_PREFIX = 'g-';
 
 const DAILY = 'https://api.daily.co/v1';
