@@ -62,7 +62,7 @@
       var inp = document.createElement('input'); inp.readOnly = true; inp.value = g.url;
       inp.addEventListener('click', function () { inp.select(); });
       var row = document.createElement('div'); row.className = 'dgp-row';
-      var lb = btn(g.listen ? 'Mute' : 'Listen', 'dgp-sec', function () { g.listen = !g.listen; applyListen(); draw(); });
+      var lb = btn(g.listen === false ? 'Listen' : 'Mute', 'dgp-sec', function () { g.listen = (g.listen === false); applyListen(); draw(); });
       row.appendChild(lb);
       row.appendChild(btn('Copy link', '', function () { copy(room); }));
       row.appendChild(btn('Reconnect', 'dgp-sec', function () { reconnect(room); }));
@@ -77,7 +77,7 @@
     Object.keys(guests).forEach(function (room) {
       var suffix = room.split('-').pop();
       var v = document.querySelector('video[id^="card-vid-"][id$="_src_' + suffix + '"]');
-      if (v) v.muted = !guests[room].listen;
+      if (v) v.muted = (guests[room].listen === false);
     });
   }
   setInterval(applyListen, 1000);
