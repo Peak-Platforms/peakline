@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { GUEST_ROOM_PREFIX } from '@/lib/director-guest';
 
 export async function POST(
   req: Request,
   { params }: { params: { roomId: string } }
 ) {
   const roomId = params.roomId;
+
+  // Guest links aren't counted against any plan
+  if (roomId.startsWith(GUEST_ROOM_PREFIX)) {
+    return NextResponse.json({ ok: true });
+  }
+
   const supabase = createAdminClient();
 
   // Reusable link

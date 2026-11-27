@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { getGuestRoomUrl, GUEST_ROOM_PREFIX } from '@/lib/director-guest';
 
 export async function POST(
   req: Request,
   { params }: { params: { roomId: string } }
 ) {
   const roomId = params.roomId;
+
+  // Director guest link: usable again and again until it expires or is ended
+  if (roomId.startsWith(GUEST_ROOM_PREFIX)) {
+    const url = await getGuestRoomUrl(roomId);
+    if (!url) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    return NextResponse.json({ roomUrl: url });
+  }
+
   const supabase = createAdminClient();
 
   // Reusable link — check eligibility only, don't consume yet

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { getGuestRoomUrl, GUEST_ROOM_PREFIX } from '@/lib/director-guest';
 
 async function getBranding(supabase: any, userId: string) {
   const { data: profile } = await supabase
@@ -22,6 +23,22 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   const roomId = params.roomId;
+
+  // Director guest link (made by the Invite guest button)
+  if (roomId.startsWith(GUEST_ROOM_PREFIX)) {
+    if (!(await getGuestRoomUrl(roomId))) {
+      return NextResponse.json(
+        { error: 'not_found', message: 'This guest link has ended or expired.' },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({
+      type: 'guest',
+      clientName: 'Guest',
+      branding: { displayName: null, businessName: null, accentColor: '#F2A93B', photoUrl: null, showBranding: true },
+    });
+  }
+
   const supabase = createAdminClient();
 
   // Reusable link?
