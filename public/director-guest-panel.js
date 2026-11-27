@@ -62,6 +62,8 @@
       var inp = document.createElement('input'); inp.readOnly = true; inp.value = g.url;
       inp.addEventListener('click', function () { inp.select(); });
       var row = document.createElement('div'); row.className = 'dgp-row';
+      var lb = btn(g.listen === false ? 'Listen' : 'Mute', 'dgp-sec', function () { g.listen = (g.listen === false); applyListen(); draw(); });
+      row.appendChild(lb);
       row.appendChild(btn('Copy link', '', function () { copy(room); }));
       row.appendChild(btn('Reconnect', 'dgp-sec', function () { reconnect(room); }));
       row.appendChild(btn('End guest', 'dgp-end', function () { endGuest(room); }));
@@ -70,6 +72,15 @@
       list.appendChild(card);
     });
   }
+
+  function applyListen() {
+    Object.keys(guests).forEach(function (room) {
+      var suffix = room.split('-').pop();
+      var v = document.querySelector('video[id^="card-vid-"][id$="_src_' + suffix + '"]');
+      if (v) v.muted = (guests[room].listen === false);
+    });
+  }
+  setInterval(applyListen, 1000);
 
   function btn(label, cls, fn) {
     var b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls;
